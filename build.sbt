@@ -13,7 +13,6 @@ lazy val root = (project in file("."))
       "dev.zio" %% "zio-config"          % zioConfigVersion,
       "dev.zio" %% "zio-config-magnolia" % zioConfigVersion,
       "dev.zio" %% "zio-config-typesafe" % zioConfigVersion,
-      "dev.zio" %% "zio-config-refined"  % zioConfigVersion,
       "dev.zio" %% "zio" % zioVersion
     ) ++ testDependencies,
     testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
