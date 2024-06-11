@@ -15,7 +15,7 @@ object ApplicationConfigSpec extends ZIOSpecDefault {
     suite("ApplicationConfig")(
       test("can load successfully") {
         (for {
-          config <- ZIO.service[ApplicationConfig]
+          config <- ZIO.service[ApplicationConfigAlg]
           hoconConfig <- config.hoconConfig
           exampleConfig = hoconConfig.exampleConfigKebabCase
         } yield assertTrue(
@@ -45,7 +45,7 @@ object ApplicationConfigSpec extends ZIOSpecDefault {
           )
 
         (for {
-          config <- ZIO.service[ApplicationConfig]
+          config <- ZIO.service[ApplicationConfigAlg]
           hoconConfig <- config.hoconConfig
           exampleConfig = hoconConfig.exampleConfigKebabCase
         } yield assertTrue(
@@ -88,7 +88,7 @@ object ApplicationConfigSpec extends ZIOSpecDefault {
 
 
           (for {
-            config <- ZIO.service[ApplicationConfig]
+            config <- ZIO.service[ApplicationConfigAlg]
             _ <- config.hoconConfig
           } yield ())
             .provide(
@@ -117,8 +117,8 @@ object ApplicationConfigSpec extends ZIOSpecDefault {
         val expectedErrorMessage: String = "Missing data"
 
         (for {
-          appConfig <- ZIO.service[ApplicationConfig]
-          _ <- appConfig.hoconConfig
+          config <- ZIO.service[ApplicationConfigAlg]
+          _ <- config.hoconConfig
         } yield ())
           .provide(
             ApplicationConfig.live,
