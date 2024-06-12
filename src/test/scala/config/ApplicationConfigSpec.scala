@@ -1,8 +1,8 @@
 package config
 
-import config.*
 import domain.MediaTypes
 import domain.MediaTypes.DVD
+import domain.newtypes.Newtypes.StringNewtype
 import zio.*
 import zio.config.typesafe.TypesafeConfigProvider
 import zio.test.*
@@ -22,7 +22,9 @@ object ApplicationConfigSpec extends ZIOSpecDefault {
           exampleConfig.intNumber == 10,
           exampleConfig.bigDecimalNumber == 2000,
           exampleConfig.floatNumber == 2.5F,
-          exampleConfig.stringText == "hello world"
+          exampleConfig.stringText == "hello world",
+          exampleConfig.zioPreludeNewtype == StringNewtype("This is a custom prelude type"),
+          hoconConfig.ironTypes.positiveInt == 20
         ))
           .provide(
             ApplicationConfig.live,
@@ -38,9 +40,12 @@ object ApplicationConfigSpec extends ZIOSpecDefault {
                |    big-decimal-number = 22000
                |    float-number = 5.8
                |    string-text = "hello world hocon string"
+               |    zio-prelude-newtype = "String newtype"
                |}
                |media = "DVD"
-               |
+               |iron-types {
+               |    positive-int = 20
+               |}
                |""".stripMargin
           )
 
@@ -53,11 +58,46 @@ object ApplicationConfigSpec extends ZIOSpecDefault {
           exampleConfig.bigDecimalNumber == 22000,
           exampleConfig.floatNumber == 5.8F,
           exampleConfig.stringText == "hello world hocon string",
-          hoconConfig.media == DVD
+          exampleConfig.zioPreludeNewtype == StringNewtype("String newtype"),
+          hoconConfig.media == DVD,
+          hoconConfig.ironTypes.positiveInt == 20
         ))
           .provide(
             ApplicationConfig.live,
             ZLayer.succeed(invalidConfig)
+          )
+      },
+      test("does not load successfully when the iron-types positive int is not positive") {
+        val invalidConfig = TypesafeConfigProvider
+          .fromHoconString(
+            s"""
+               |example-config-kebab-case {
+               |    int-number = 1010
+               |    big-decimal-number = 22000
+               |    float-number = 5.8
+               |    string-text = "hello world hocon string"
+               |    zio-prelude-newtype = "String newtype"
+               |}
+               |media = "DVD"
+               |iron-types {
+               |    positive-int = -80
+               |}
+               |""".stripMargin
+          )
+
+        val expectedErrorMessage = "Invalid data at iron-types.positive-int: Should be strictly positive"
+
+        (for {
+          config <- ZIO.service[ApplicationConfigAlg]
+          _ <- config.hoconConfig
+        } yield ())
+          .provide(
+            ApplicationConfig.live,
+            ZLayer.succeed(invalidConfig)
+          )
+          .flip
+          .map((error: Config.Error) =>
+            assertTrue(error.getMessage().contains(expectedErrorMessage))
           )
       },
       test("does not load successfully when provided invalid enum") {
@@ -80,7 +120,9 @@ object ApplicationConfigSpec extends ZIOSpecDefault {
                  |    string-text = "hello world hocon string"
                  |}
                  |media = "$mediaString"
-                 |
+                 |iron-types {
+                 |    positive-int = 20
+                 |}
                  |""".stripMargin
             )
 
